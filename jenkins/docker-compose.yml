@@ -1,0 +1,42 @@
+services:
+    jenkins:
+        container_name: jenkins
+        image: jenkins/jenkins:lts-jdk17
+        privileged: true
+        user: root
+        volumes:
+            - jenkins-data:/var/jenkins_home
+            - /var/run/docker.sock:/var/run/docker.sock
+        networks:
+            - frontend
+            - jenkins_default
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.jenkins-https.tls=true
+            - traefik.http.routers.jenkins-https.tls.certresolver=cloudflare
+            - traefik.http.routers.jenkins-https.entrypoints=websecure
+            - traefik.http.routers.jenkins-https.rule=Host(`jenkins.caradev.fr`)
+            - traefik.http.services.jenkins-https.loadbalancer.server.port=8080
+        restart: unless-stopped
+        
+    agent:
+        container_name: jenkins-agent
+        image: jenkins/ssh-agent
+        privileged: true
+        user: root
+        expose:
+            - 22
+        env_file: stack.env
+        networks:
+            - jenkins_default
+        restart: unless-stopped
+
+volumes:
+  jenkins-data:
+    name: jenkins-data
+
+networks:
+    frontend:
+        external: true
+    jenkins_default:
+        external: false
