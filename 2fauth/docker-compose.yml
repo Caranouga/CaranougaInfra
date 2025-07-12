@@ -1,0 +1,28 @@
+services: 
+  2fauth:
+    image: 2fauth/2fauth
+    container_name: 2fauth
+    volumes:
+      - 2fauth-data:/2fauth
+      - 2fauth-patches:/srv/vendor/khanamiryan/qrcode-detector-decoder/lib/Qrcode/Decoder
+    networks:
+      - frontend
+    env_file: stack.env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.2fauth-https.tls=true
+      - traefik.http.routers.2fauth-https.tls.certresolver=cloudflare
+      - traefik.http.routers.2fauth-https.entrypoints=websecure
+      - traefik.http.routers.2fauth-https.rule=Host(`2fauth.caradev.fr`)
+      - traefik.http.services.2fauth-https.loadbalancer.server.port=8000
+    restart: unless-stopped
+
+networks:
+  frontend:
+    external: true
+
+volumes:
+  2fauth-data:
+    name: 2fauth-data
+  2fauth-patches:
+    name: 2fauth-patches
