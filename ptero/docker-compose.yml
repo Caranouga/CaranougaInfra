@@ -1,0 +1,88 @@
+services:
+  database:
+    image: mariadb:10.5
+    restart: always
+    command: --default-authentication-plugin=mysql_native_password
+    env_file: stack.env
+    volumes:
+      - ptero-db:/var/lib/mysql
+    networks:
+      - pterodactyl
+      
+  cache:
+    image: redis:alpine
+    restart: always
+    networks:
+      - pterodactyl
+      
+  panel:
+    image: ghcr.io/pterodactyl/panel:latest
+    restart: always
+    env_file: stack.env
+    volumes:
+      - ptero-var:/app/var/
+      - ptero-nginx:/etc/nginx/http.d/
+      - ptero-certs:/etc/letsencrypt/
+      - ptero-logs:/app/storage/logs
+    environment:
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+    networks:
+      - frontend
+      - pterodactyl
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ptero-panel-https.tls=true
+      - traefik.http.routers.ptero-panel-https.tls.certresolver=cloudflare
+      - traefik.http.routers.ptero-panel-https.entrypoints=websecure
+      - traefik.http.routers.ptero-panel-https.rule=Host(`ptero.caradev.fr`)
+
+
+  wings:
+    image: ghcr.io/pterodactyl/wings:latest
+    restart: always
+    tty: true
+    env_file: stack.env
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/ssl/certs:/etc/ssl/certs:ro
+      - /var/lib/docker/containers/:/var/lib/docker/containers/
+      - wings-config:/etc/pterodactyl/
+      - wings-data:/var/lib/pterodactyl/
+      - wings-logs:/var/log/pterodactyl/
+      - wings-tmp:/tmp/pterodactyl/
+    networks:
+      - pterodactyl
+      - frontend
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.ptero-wings-https.rule=Host(`node01.ptero.caradev.fr`)
+      - traefik.http.routers.ptero-wings-https.entrypoints=websecure
+      - traefik.http.routers.ptero-wings-https.tls=true
+      - traefik.http.routers.ptero-wings-https.tls.certresolver=cloudflare
+      - traefik.http.services.ptero-wings-https.loadbalancer.server.port=443
+
+volumes:
+  ptero-db:
+    name: ptero-db
+  ptero-var:
+    name: ptero-var
+  ptero-nginx:
+    name: ptero-nginx
+  ptero-certs:
+    name: ptero-certs
+  ptero-logs:
+    name: ptero-logs
+  wings-config:
+    name: wings-config
+  wings-data:
+    name: wings-data
+  wings-logs:
+    name: wings-logs
+  wings-tmp:
+    name: wings-tmp
+  
+
+networks:
+  frontend:
+    external: true
+  pterodactyl:
