@@ -1,0 +1,27 @@
+services:
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    restart: always
+    user: 1000:1000
+    volumes:
+      - vw-data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.vw-https.tls=true
+      - traefik.http.routers.vw-https.tls.certresolver=cloudflare
+      - traefik.http.routers.vw-https.entrypoints=websecure
+      - traefik.http.routers.vw-https.rule=Host(`vw.caradev.fr`)
+      - traefik.http.services.vw-https.loadbalancer.server.port=80
+    networks:
+        - frontend
+    env_file:
+      - stack.env
+
+volumes:
+  vw-data:
+    name: vw-data
+
+networks:
+  frontend:
+    external: true
