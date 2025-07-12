@@ -1,0 +1,26 @@
+services:
+  picoshare:
+    container_name: picoshare
+    image: mtlynch/picoshare
+    env_file: stack.env
+    command: -db /data/store.db
+    volumes:
+      - picoshare-data:/data
+    networks:
+      - frontend
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.fs-https.tls=true
+      - traefik.http.routers.fs-https.tls.certresolver=cloudflare
+      - traefik.http.routers.fs-https.entrypoints=websecure
+      - traefik.http.routers.fs-https.rule=Host(`fs.caradev.fr`)
+      - traefik.http.services.fs-https.loadbalancer.server.port=4001
+
+volumes:
+  picoshare-data:
+    name: picoshare-data
+
+networks:
+  frontend:
+    external: true
