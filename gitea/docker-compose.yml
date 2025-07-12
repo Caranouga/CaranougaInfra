@@ -1,0 +1,50 @@
+services:
+  server:
+    image: docker.gitea.com/gitea:latest
+    container_name: gitea
+    # environment:
+      # - GITEA_CUSTOM=/home/cara/docker/gitea/customizations
+    restart: always
+    networks:
+      - gitea
+      - frontend
+    volumes:
+      - gitea-data:/data
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.git-https.tls=true
+      - traefik.http.routers.git-https.tls.certresolver=cloudflare
+      - traefik.http.routers.git-https.entrypoints=websecure
+      - traefik.http.routers.git-https.rule=Host(`git.caradev.fr`)
+      - traefik.http.services.git-https.loadbalancer.server.port=3000
+    depends_on:
+      - db
+
+  db:
+    image: docker.io/library/postgres:14
+    restart: always
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=gitea
+    networks:
+      - gitea
+      - kuma
+    volumes:
+      - gitea-postgres-data:/var/lib/postgresql/data
+
+volumes:
+  gitea-data:
+    name: gitea-data
+  gitea-postgres-data:
+    name: gitea-postgres-data
+
+networks:
+  gitea:
+    external: false
+  frontend:
+    external: true
+  kuma:
+    external: true
