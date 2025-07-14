@@ -1,0 +1,15 @@
+services:
+  wireguard:
+    image: lscr.io/linuxserver/wireguard
+    network_mode: "host"
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    env_file: stack.env
+    volumes:
+      - wireguard-data:/config
+      - /lib/modules:/lib/modules
+
+volumes:
+  wireguard-data:
+    name: wireguard-data
