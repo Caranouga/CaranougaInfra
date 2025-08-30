@@ -1,0 +1,36 @@
+services:
+  wakapi:
+    image: ghcr.io/muety/wakapi:latest
+    init: true
+    depends_on:
+      - db
+    restart: unless-stopped
+    env_file: stack.env
+    networks:
+      - frontend
+      - wakapi_net
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.wakapi-kuma-https.tls=true
+      - traefik.http.routers.wakapi-kuma-https.tls.certresolver=cloudflare
+      - traefik.http.routers.wakapi-kuma-https.entrypoints=websecure
+      - traefik.http.routers.wakapi-kuma-https.rule=Host(`time.caradev.fr`)
+      - traefik.http.services.wakapi-kuma-https.loadBalancer.server.port=3000
+
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    env_file: stack.env
+    networks:
+      - wakapi_net
+    volumes:
+      - wakapi-db-data:/var/lib/postgresql/data
+
+volumes:
+  wakapi-db-data: {}
+
+networks:
+  frontend:
+    external: true
+  wakapi_net:
+    driver: bridge
