@@ -1,0 +1,42 @@
+services:
+  mediawiki:
+    image: mediawiki:latest
+    container_name: mediawiki
+    env_file: stack.env
+    networks:
+      - frontend
+      - mediawiki
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.mediawiki-https.tls=true
+      - traefik.http.routers.mediawiki-https.tls.certresolver=cloudflare
+      - traefik.http.routers.mediawiki-https.entrypoints=websecure
+      - traefik.http.routers.mediawiki-https.rule=Host(`wiki.caradev.fr`)
+      - traefik.http.services.mediawiki-https.loadbalancer.server.port=80
+    depends_on:
+      - db
+    volumes:
+      - mediawiki-data:/var/www/html/images
+      - mediawiki-localsettings:/var/www/html
+
+  db:
+    image: mysql:5.7
+    container_name: mediawiki_db
+    env_file: stack.env
+    networks:
+      - mediawiki
+    volumes:
+      - mediawiki-db:/var/lib/mysql
+      
+volumes:
+  mediawiki-data:
+    name: mediawiki-data
+  mediawiki-db:
+    name: mediawiki-db
+  mediawiki-localsettings:
+    name: mediawiki-localsettings
+
+networks:
+  frontend:
+    external: true
+  mediawiki:
