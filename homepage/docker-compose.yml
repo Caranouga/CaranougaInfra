@@ -1,0 +1,33 @@
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.home-https.tls=true
+      - traefik.http.routers.home-https.tls.certresolver=cloudflare
+      - traefik.http.routers.home-https.entrypoints=websecure
+      - traefik.http.routers.home-https.rule=Host(`caradev.fr`)
+      - traefik.http.routers.home-https.middlewares=middlewares-authentik@file
+      - traefik.http.services.home-https.loadbalancer.server.port=3000
+    volumes:
+      - homepage-config:/app/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - frontend
+      - dashboard
+      - authentik
+    environment:
+      HOMEPAGE_ALLOWED_HOSTS: caradev.fr
+
+volumes:
+  homepage-config:
+    name: homepage-config
+
+networks:
+  frontend:
+    external: true
+  dashboard:
+    external: true
+  authentik:
+    external: true
