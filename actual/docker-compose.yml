@@ -1,0 +1,32 @@
+services:
+  actual_server:
+    image: docker.io/actualbudget/actual-server:latest
+    networks:
+      - frontend
+      - dashboard
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.actual-https.tls=true
+      - traefik.http.routers.actual-https.tls.certresolver=cloudflare
+      - traefik.http.routers.actual-https.entrypoints=websecure
+      - traefik.http.routers.actual-https.rule=Host(`money.caradev.fr`)
+      - traefik.http.services.actual-https.loadbalancer.server.port=5006
+    volumes:
+      - actual-data:/data
+    healthcheck:
+      test: ['CMD-SHELL', 'node src/scripts/health-check.js']
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+    restart: unless-stopped
+
+volumes:
+  actual-data:
+    name: actual-data
+
+networks:
+  frontend:
+    external: true
+  dashboard:
+    external: true
